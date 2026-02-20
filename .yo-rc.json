@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.20.8",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.24.0"
+    },
+    "version": "1.20.0",
+    "libraryName": "quick-links",
+    "libraryId": "152d4b03-9814-49dc-9bc3-205fcce1ea74",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "QuickLinks",
+    "solutionShortDescription": "QuickLinks description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
