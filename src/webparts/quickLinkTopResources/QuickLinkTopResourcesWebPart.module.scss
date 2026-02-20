@@ -99,4 +99,35 @@
   font-style: italic;
 }
 
+/* Responsive: ensure consistent card sizing on smaller viewports */
+@media (max-width: 768px) {
+  .card {
+    flex: 0 0 calc(50% - 12px);
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    justify-content: center;
+    gap: 12px;
+    margin-left: 0;
+    padding: 0 8px;
+  }
+
+  .card {
+    /* full width row, consistent size */
+    flex: 0 0 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    min-height: 64px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+}
+
 

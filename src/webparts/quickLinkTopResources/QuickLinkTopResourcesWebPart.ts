@@ -27,11 +27,15 @@ interface ILinkItem {
 
 export default class QuickLinksTopResourcesWebPart extends BaseClientSideWebPart<IQuickLinksTopResourcesWebPartProps> {
 
+  private _boundAdjustGridAlignment: () => void;
+
   protected onInit(): Promise<void> {
     // Initialize customLinks array if not exists
     if (!this.properties.customLinks) {
       this.properties.customLinks = [];
     }
+    // bind resize handler so we can add/remove the listener later
+    this._boundAdjustGridAlignment = this.adjustGridAlignment.bind(this);
     return Promise.resolve();
   }
 
@@ -64,6 +68,22 @@ export default class QuickLinksTopResourcesWebPart extends BaseClientSideWebPart
     `;
 
     this.loadLinks();
+
+    // Adjust alignment after initial render (custom links may be present)
+    setTimeout(() => this.adjustGridAlignment(), 0);
+    // Recompute alignment when the viewport changes
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this._boundAdjustGridAlignment);
+      window.addEventListener('orientationchange', this._boundAdjustGridAlignment);
+    }
+  }
+
+  protected onDispose(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this._boundAdjustGridAlignment);
+      window.removeEventListener('orientationchange', this._boundAdjustGridAlignment);
+    }
+    super.onDispose();
   }
 
   private loadLinks(): void {
@@ -106,8 +126,59 @@ export default class QuickLinksTopResourcesWebPart extends BaseClientSideWebPart
         <div class="${styles.title}">${item.Title}</div>
       </a>
     `).join('');
+    
+    // Center any incomplete final row after cards are rendered
+    setTimeout(() => this.adjustGridAlignment(), 0);
+
   }
 
+
+  /**
+   * Adjusts the alignment of the last row so that if the final row contains
+   * fewer than `cardsPerRow` items they appear centered within the grid.
+   */
+  private adjustGridAlignment(): void {
+    try {
+      const grid = this.domElement.querySelector(`.${styles.grid}`) as HTMLElement | null;
+      if (!grid) return;
+
+      const cards = Array.from(grid.querySelectorAll(`.${styles.card}`)) as HTMLElement[];
+      const cardsPerRow = 3;
+
+      // Reset any inline margin applied previously
+      cards.forEach(c => { c.style.marginLeft = ''; });
+
+      const total = cards.length;
+      if (total === 0) return;
+
+      const remainder = total % cardsPerRow;
+      if (remainder === 0) return; // full final row, nothing to do
+
+      const firstIndexLastRow = Math.floor(total / cardsPerRow) * cardsPerRow;
+      const firstCard = cards[firstIndexLastRow];
+      if (!firstCard) return;
+
+      const gridStyles = window.getComputedStyle(grid);
+      const gap = parseFloat(gridStyles.gap || '16') || 16;
+
+      const cardRect = firstCard.getBoundingClientRect();
+      const cardWidth = cardRect.width;
+      const containerWidth = grid.clientWidth;
+
+      // If cards are stacked vertically (single column) don't try to center horizontally
+      if (cardWidth >= containerWidth - 2) return;
+
+      const totalWidth = remainder * cardWidth + (remainder - 1) * gap;
+      const leftMargin = Math.max(0, (containerWidth - totalWidth) / 2);
+
+      // Apply the computed left margin to the first card of the last row
+      firstCard.style.marginLeft = `${leftMargin}px`;
+    } catch (e) {
+      // Fail silently - alignment is a nicety and shouldn't break rendering
+      // eslint-disable-next-line no-console
+      console.warn('adjustGridAlignment error', e);
+    }
+  }
   // Generate unique ID
   private _generateId(): string {
     return 'link_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
